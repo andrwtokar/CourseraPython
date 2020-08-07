@@ -1,24 +1,26 @@
-import sys
 import argparse
+import os
+import tempfile
+import json
 
 '''
 Надо написать:
-    1. функцию чтения из data-file слоавря                                  -
-    2. функцию записи готового словаря в data-file                          -
+    1. функцию чтения из data-file слоавря                                  +
+    2. функцию записи готового словаря в data-file                          +
     3. функцию чтения value по заданному key                                +
     4. функцию дозаписи заданного value в заданный key                      +
     5. реализовать механизм выбора действий                                 +
     6. разобраться в argparse и переделать программу под этот стиль         +
-    7. -//- json -//-                                                       -
-    8. сделать работу с файлом через tempfile                               -
+    7. -//- json -//-                                                       +
+    8. сделать работу с файлом через tempfile                               +
 '''
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--key', dest="key", type=str)
-parser.add_argument('--value', dest="value", type=str)
+parser.add_argument('--val', dest="value", type=str)
 args = parser.parse_args()
 """
-В переменной args мы имеем значения:
+В переменной args мы имеем считанные значения:
     Значение    default
     key         None
     value       None
@@ -28,10 +30,18 @@ args = parser.parse_args()
 def read_File(filename):
     """
     Аккуратно считываем данные из файла и записываем в словарь
+    Открываем файл на дозапись для создания его, если он создан ещё не был
     :param filename: файл, из которого читаем данные
     :return: словарь с данными из файла
     """
-    result = dict()
+    f = open(filename, 'a')
+    f.close()
+    with open(filename) as file:
+        fileInternals = file.read()
+        if fileInternals != "":
+            result = json.loads(fileInternals)
+        else:
+            result = dict()
     return result
 
 
@@ -57,17 +67,29 @@ def put_Key_Value(key, value, dict):
         dict[key] = []
     dict[key].append(value)
 
-def put_Dict_In_File(filename):
+
+def put_Dict_In_File(filename, dict):
     """
     Записывает рабочий словарь в файл filename
     :param filename: имя файля, в которых необходимо за писать словарь
+    :param dict: словарь, который необходимо записать в файл
     :return: NONE
     """
+    with open(filename, 'w') as f:
+        json.dump(dict, f)
 
-dict = read_File("files/storage.data")
+
+storage_path = os.path.join(tempfile.gettempdir(), 'storage.data')
+data = read_File(storage_path)
+
 
 if (args.value is None):
-    print(read_Key(args.key, dict))
+    result = read_Key(args.key, data)
+    if not result is None:
+        print(', '.join(result))
+    else:
+        print(result)
 else:
-    put_Key_Value(args.key, args.value, dict)
+    put_Key_Value(args.key, args.value, data)
 
+put_Dict_In_File(storage_path, data)
