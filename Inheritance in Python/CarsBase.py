@@ -9,7 +9,7 @@ def return_float_body_whl(body_whl):
             res[i] = res[i].strip()
             res[i] = float(res[i])
     except ValueError:
-        res = [0, 0, 0]
+        res = [0.0, 0.0, 0.0]
 
     return res
 
@@ -22,25 +22,25 @@ class CarBase:
         self.carrying = float(carrying)
 
     def get_photo_file_ext(self):
-        return os.path.splitext(self.photo_file_name)
+        return os.path.splitext(self.photo_file_name)[1]
 
 
 class Car(CarBase):
     def __init__(self, brand, photo_file_name, carrying, passenger_seats_count):
         super().__init__(brand, photo_file_name, carrying)
-        super().car_type = 'car'
-        self.passenger_seats_count = passenger_seats_count
+        self.car_type = "car"
+        self.passenger_seats_count = int(passenger_seats_count)
 
 
 class Truck(CarBase):
     def __init__(self, brand, photo_file_name, carrying, body_whl):
         super().__init__(brand, photo_file_name, carrying)
-        super().car_type = 'truck'
+        self.car_type = 'truck'
 
         res = return_float_body_whl(body_whl)
-        self.body_width = res[0]
-        self.body_height = res[1]
-        self.body_length = res[2]
+        self.body_width = float(res[1])
+        self.body_height = float(res[2])
+        self.body_length = float(res[0])
 
     def get_body_volume(self):
         return self.body_length * self.body_width * self.body_height
@@ -49,14 +49,14 @@ class Truck(CarBase):
 class SpecMachine(CarBase):
     def __init__(self, brand, photo_file_name, carrying, extra):
         super().__init__(brand, photo_file_name, carrying)
-        super().car_type = 'spec_machine'
+        self.car_type = 'spec_machine'
         self.extra = extra
 
 
 def validation(row):
     # Проверка наличия непустых обязательных полей      +
     # Проверка правильности форматов фотографий         +
-    # Проверка верности грузоподьемности
+    # Проверка верности грузоподьемности                +
 
     if row[1] == '':
         return False
@@ -70,10 +70,13 @@ def validation(row):
             os.path.splitext(row[3])[1] == '.png' or
             os.path.splitext(row[3])[1] == '.gif'):
         return False
+    elif os.path.splitext(row[3])[0] == '':
+        return False
 
-    if True:
-        #write validation for float of carrying
-        pass
+    try:
+        float(row[5])
+    except ValueError:
+        return False
 
     return True
 
@@ -84,25 +87,30 @@ def get_car_list(csv_filename):
         reader = csv.reader(csv_fd, delimiter=';')
         next(reader)
         for row in reader:
-            # Добавить валидацию для каждого персонального пункта
             if row[0] == 'car':
                 if not validation(row):
                     continue
-
-                car = Car(row[1], row[3], row[5], row[2])
+                try:
+                    n = int(row[2])
+                except ValueError:
+                    continue
+                car = Car(row[1], row[3], row[5], n)
                 car_list.append(car)
+
             elif row[0] == 'truck':
                 if not validation(row):
                     continue
-
                 truck = Truck(row[1], row[3], row[5], row[4])
                 car_list.append(truck)
+
             elif row[0] == 'spec_machine':
                 if not validation(row):
                     continue
-
+                if row[6] == '':
+                    continue
                 spec_machine = SpecMachine(row[1], row[3], row[5], row[6])
                 car_list.append(spec_machine)
+
             else:
                 continue
 
